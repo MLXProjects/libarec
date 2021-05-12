@@ -2,10 +2,8 @@
 
 ## LIBAREC - Android RECovery in a Library
 
-This is an attempt to make it easier for future recovery devs to 
-implement GUIs, unleashing the real potential Android phones have.  
-Libarec can be used in two ways, linking to it in a single app or
-as a server (so multiple apps can see the current task info).
+This is an attempt to make it easier for future recovery devs to implement GUIs, unleashing the real potential Android phones have.  
+Libarec is written in C and can be used in two ways, linking to it in a single app or as a server (so multiple apps can see the current task info).
 
 1) linking to it in a single app: 
 libarec can also be used without a server/client approach, by just using 
