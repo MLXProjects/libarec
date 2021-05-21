@@ -55,7 +55,7 @@ echo Building libarec test client
 %AREC_GCC% -static ^
 	!AREC_CFLAGS! ^
 	!AREC_TARGET_SRC! ^
-	%AREC_BASE%\tests\client.c ^
+	%AREC_BASE%\tests\test.c ^
 	-I%AREC_BASE%\include\ ^
 	-o arec-client
 goto end

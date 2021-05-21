@@ -3,45 +3,17 @@
 /* recovery variable */
 static ARECOVERY _recovery={0};
 
-/* individual client variable (one for each client connected) */
+#ifndef AREC_NOSERVER
+/* client variable */
 static arec_sv_client_t *_arec_client;
+#endif
 
 /* get recovery variable */
 ARECOVERYP arecovery(){
 	return &_recovery;
 }
 
-#ifdef AREC_NOSERVER
-byte _arec_msg_loop(){
-	RLOGI("Starting message loop");
-	_recovery.onloop=1;
-	while (_recovery.onloop){
-		if (_recovery.loop_handler){
-			if (!_recovery.loop_handler())
-				break;
-		}
-		else {
-			RLOGE("Loop handler not set, exiting!");
-			break;
-		}
-	}
-	RLOGI("Message loop finished");
-	return 1;
-}
-
-int arec_start(int *loop_handler){
-	RLOGI("Starting up!");
-	_recovery.loop_handler=loop_handler;
-	_arec_msg_loop();
-	return 0;
-}
-
-void arec_end(){
-	RLOGI("Finishing session!");
-	_recovery.onloop=0;
-}
-
-#else
+#ifndef AREC_NOSERVER
 
 ARECOVERYP *arec_connect(){
 	RLOGI("Connecting to server...");
@@ -59,7 +31,7 @@ ARECOVERYP *arec_connect(){
 	return instance;
 }
 
-void *arec_send_request(int cmd){
+void *arec_send_request(int cmd, char *data){
 	
 	arec_sv_cmd_t req;
 	arec_sv_response_getmsg_t *res;
@@ -71,7 +43,7 @@ void *arec_send_request(int cmd){
 	if (res == NULL) {
 		printf("client: send request error\n");
 		arec_sv_client_close(_arec_client);
-		return AREC_SV_CMDSTATUS_ERROR;
+		return (void *)AREC_SV_CMDSTATUS_ERROR;
 	}
 
 	if (res->common.status == AREC_SV_CMDSTATUS_SUCCESS) {
@@ -90,7 +62,7 @@ void *_arec_install_thread(void *paths_pointer){
 	int *count = NULL;
 	char **packages = arec_parse_package_list(paths, &count);
 	if (packages==NULL || count==0){
-		return AREC_INSTALL_NOFILES;
+		return &AREC_INSTALL_NOFILES;
 	}
 	PPLOGI("Installing %d packages: \n", count);
 	int pkg_i;
@@ -98,11 +70,26 @@ void *_arec_install_thread(void *paths_pointer){
 		PPLOGI("%s\n", packages[pkg_i]);
 		arec_sleep(5000);
 	}
+	
+#ifndef AREC_NOSERVER
+	//tell clients that a package finished installing, and 
+	//send the status (success/failed)
+#endif
 }
 
 int arec_install(char *paths){
-	RLOGI("Call install here pls");
-	return 1;
+	//RLOGI("Call install here pls");
+	int *ret=NULL;
+#ifdef AREC_NOSERVER
+	//standalone implementation
+	ret = (int *)_arec_install_thread((void *)paths);
+#else
+	//client implementation
+	pthread_t dummy;
+	pthread_create(&dummy, NULL, _arec_install_thread, (void *)paths);
+	ret=&AREC_INSTALL_SERVER_WAIT;
+#endif
+	return *ret;
 }
 
 char **arec_parse_package_list(char *string, int **count){

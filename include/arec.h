@@ -22,18 +22,19 @@
 	#include <arec_info.h>
 #else 
 	#define AREC_SV_SOCKET_PATH	"\0arec_sv"
-/* Request type, the values used in struct uds_command_t.command */
-	#define AREC_REQVERSION_FULL	1
-	#define AREC_REQVERSION_NUMBER	2
-	#define AREC_REQVERSION_MAJOR	3
-	#define AREC_REQVERSION_MINOR	4
-	#define AREC_REQVERSION_PATCH	5
 #endif
+/* version request options */
+#define AREC_REQVERSION_FULL	1
+#define AREC_REQVERSION_NUMBER	2
+#define AREC_REQVERSION_MAJOR	3
+#define AREC_REQVERSION_MINOR	4
+#define AREC_REQVERSION_PATCH	5
 
 /* return codes for install */
-#define AREC_INSTALL_SUCCESS	1
-#define AREC_INSTALL_FAILED		0
-#define AREC_INSTALL_NOFILES	-1
+#define AREC_INSTALL_SERVER_WAIT	2
+#define AREC_INSTALL_SUCCESS		1
+#define AREC_INSTALL_FAILED			0
+#define AREC_INSTALL_NOFILES		-1
 
 typedef struct {
 	/* settings manager */
@@ -48,10 +49,6 @@ typedef struct {
 	int is_installing;
 	char *current_zip;
 	int onloop;	
-
-#ifdef AREC_NOSERVER
-	int (*loop_handler)(void);
-#endif
 	
 } ARECOVERY, * ARECOVERYP;
 
@@ -59,11 +56,9 @@ extern ARECOVERYP arecovery();
 extern char *arec_version(int type);
 #ifdef AREC_NOSERVER
 extern char *arec_version();
-extern int arec_start();
-extern void arec_end();
 #else
 extern ARECOVERYP *arec_connect();
-extern void *arec_send_request(int cmd);
+extern void *arec_send_request(int cmd, char *data);
 #endif
 extern int arec_install(char *paths);
 extern int arec_wipe(char *partition);

@@ -5,7 +5,7 @@ static ARECOVERYP instance;
 int main(int argc, char **argv){
 	int ret;
 #ifdef AREC_NOSERVER
-	printf("Welcome to %s :D\n", arec_version());
+	printf("Welcome to %s :D\n", arec_version(AREC_REQVERSION_FULL));
 	ret = arec_start(&cmd_loop_handler);
 #else
 	//handle client-side connection, and start loop
@@ -14,7 +14,7 @@ int main(int argc, char **argv){
 		printf("Unable to connect! \n");
 		return 1;
 	}
-	//arec_send_request(AREC_CMD_VERSION);
+	//start thread to poll for server close event
 	while (instance->onloop){
 		cmd_loop_handler();
 	}
@@ -29,15 +29,15 @@ int cmd_loop_handler(){
 	char *cmd = getstrline(&len);
 	char *args = NULL;
 	int command = cmdparse(cmd, len, &args);
-	if (args==NULL)
+	//if (args==NULL)
 	switch (command){
 		case F_INSTALL:{
 			switch (arec_install(args)){
 				case AREC_INSTALL_SUCCESS:
-					//printf("Finished.\n");
+					printf("Finished.\n");
 					break;
 				case AREC_INSTALL_FAILED:
-					//printf("Install failed!\n");
+					printf("Install failed!\n");
 					break;
 				case AREC_INSTALL_NOFILES:
 					printf("Usage: install <path to zip files>\n");
@@ -50,9 +50,8 @@ int cmd_loop_handler(){
 				printf("Usage: wipe <partition> || wipe <mountpoint>\n");
 				goto ok;
 			}
-			/*printf("Going to wipe something!\n");
 			printf("Wiping %s...\n", args);
-			printf("Done\n");*/
+			printf("Done\n");
 			goto ok;
 		}
 		case F_CLS:{
@@ -84,7 +83,7 @@ int cmdparse(char *cmd, int len, char **outargs){
 			if (len>7)
 				*outargs=cmd+8;
 			goto end;
-			
+				
 		}
 		else if (cmd[0]=='r' && cmd[1]=='e' && cmd[2]=='s' && cmd[3]=='t' && cmd[4]=='o' && cmd[5]=='r' && cmd[6]=='e'){
 			ret=F_RESTORE;
@@ -110,10 +109,8 @@ int cmdparse(char *cmd, int len, char **outargs){
 	if (len>=4){
 		if (cmd[0]=='w' && cmd[1]=='i' && cmd[2]=='p' && cmd[3]=='e'){
 			ret=F_WIPE;
-			if (len>4){
-				//printf("wipe: args are %s\n", cmd+5);
+			if (len>4)
 				*outargs=cmd+5;
-			}
 			goto end;
 		}
 		else if (((cmd[0]=='e' && cmd[1]=='x') ||
@@ -140,7 +137,7 @@ int cmdparse(char *cmd, int len, char **outargs){
 }
 
 char *getstrline(int *length){
-	char *buffer = calloc(16, 1);
+	char *buffer = malloc(16);
 	int len=15, i=0, c;
 	
 	while (1){
